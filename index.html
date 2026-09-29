@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#171717"
+    >
+
+    <meta
+        name="description"
+        content="YouBike 即時站點地圖"
+    >
+
+    <link
+        rel="manifest"
+        href="manifest.json"
+    >
+
+    <title>YouBike Map</title>
+
+
+    <!-- =========================
+         Leaflet
+         ========================= -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
+    >
+
+
+    <!-- =========================
+         Marker Cluster
+         ========================= -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"
+    >
+
+
+    <!-- =========================
+         我們自己的 CSS
+         ========================= -->
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         頂部工具列
+         ========================= -->
+
+    <header class="topbar">
+
+        <div class="logo">
+            YouBike Map
+        </div>
+
+
+        <div class="search-box">
+
+            <input
+                id="searchInput"
+                type="text"
+                placeholder="搜尋站點名稱..."
+                autocomplete="off"
+            >
+
+            <button id="searchButton">
+                搜尋
+            </button>
+
+        </div>
+
+
+        <button id="locationButton">
+            📍 我的附近
+        </button>
+
+    </header>
+
+
+    <!-- =========================
+         地圖
+         ========================= -->
+
+    <main>
+
+        <div id="map"></div>
+
+
+        <!-- 地圖工具 -->
+
+        <div class="map-tools">
+
+            <button id="nearbyButton">
+                📍 附近站點
+            </button>
+
+            <button id="favoritesButton">
+                ⭐ 我的收藏
+            </button>
+
+        </div>
+
+
+        <!-- 圖例 -->
+
+        <div class="legend">
+
+            <div>
+                <span class="legend-dot green"></span>
+                車輛充足
+            </div>
+
+            <div>
+                <span class="legend-dot yellow"></span>
+                車輛較少
+            </div>
+
+            <div>
+                <span class="legend-dot red"></span>
+                沒有車
+            </div>
+
+        </div>
+
+
+        <!-- 搜尋結果 -->
+
+        <div
+            id="searchResults"
+            class="search-results hidden"
+        ></div>
+
+
+        <!-- 載入提示 -->
+
+        <div
+            id="loading"
+            class="loading"
+        >
+            正在載入 YouBike 資料...
+        </div>
+
+    </main>
+
+
+    <!-- =========================
+         站點資訊
+         ========================= -->
+
+    <section
+        id="stationPanel"
+        class="station-panel hidden"
+    >
+
+        <button
+            id="closePanel"
+            class="close-button"
+        >
+            ×
+        </button>
+
+
+        <div class="panel-title-row">
+
+            <h2 id="stationName">
+                YouBike 站點
+            </h2>
+
+
+            <button
+                id="favoriteButton"
+                class="favorite-button"
+                title="收藏站點"
+            >
+                ☆
+            </button>
+
+        </div>
+
+
+        <p
+            id="stationAddress"
+            class="station-address"
+        >
+            --
+        </p>
+
+
+        <p
+            id="stationDistance"
+            class="station-distance"
+        ></p>
+
+
+        <div class="station-row">
+
+            <span>
+                🚲 普通車
+            </span>
+
+            <strong id="normalCount">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="station-row">
+
+            <span>
+                ⚡ 電輔車
+            </span>
+
+            <strong id="electricCount">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="station-row">
+
+            <span>
+                🅿️ 可還車位
+            </span>
+
+            <strong id="emptyCount">
+                0
+            </strong>
+
+        </div>
+
+
+        <p id="updateTime">
+            最後更新：--
+        </p>
+
+    </section>
+
+
+    <!-- =========================
+         附近站點
+         ========================= -->
+
+    <section
+        id="nearbyPanel"
+        class="side-panel hidden"
+    >
+
+        <div class="side-panel-header">
+
+            <h2>
+                📍 附近站點
+            </h2>
+
+            <button
+                id="closeNearby"
+                class="close-button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <p
+            id="nearbyStatus"
+            class="panel-muted"
+        >
+            正在取得附近站點...
+        </p>
+
+
+        <div id="nearbyList"></div>
+
+    </section>
+
+
+    <!-- =========================
+         收藏
+         ========================= -->
+
+    <section
+        id="favoritesPanel"
+        class="side-panel hidden"
+    >
+
+        <div class="side-panel-header">
+
+            <h2>
+                ⭐ 我的收藏
+            </h2>
+
+            <button
+                id="closeFavorites"
+                class="close-button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div id="favoritesList"></div>
+
+    </section>
+
+
+    <!-- =========================
+         Leaflet JS
+         ========================= -->
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"
+    ></script>
+
+
+    <!-- =========================
+         Marker Cluster JS
+         ========================= -->
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"
+    ></script>
+
+
+    <!-- =========================
+         我們自己的 JS
+         ========================= -->
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
